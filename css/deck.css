@@ -1,0 +1,16 @@
+.reveal section img {
+  background-color: white;
+}
+
+.reveal h2, .reveal h3 {
+  font-family: Panton;
+  text-transform: none;
+}
+
+.reveal div {
+  font-family: Panton;
+}
+
+.reveal .license {
+  font-size: 12pt;
+}
