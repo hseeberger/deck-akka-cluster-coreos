@@ -6,3 +6,41 @@
 .reveal .license {
   font-size: 12pt;
 }
+
+.reveal svg {
+  background-color: white;
+  height:           400px;
+  width:            100%;
+}
+
+.reveal .node {
+  fill: gray;
+}
+
+.reveal .hidden {
+  visibility: hidden;
+}
+
+.reveal .node.member {
+  fill: steelblue;
+}
+
+.reveal .join {
+  stroke:           gray;
+  stroke-width:     4;
+  stroke-dasharray: 8, 8;
+}
+
+.reveal .join.self {
+  fill: none;
+}
+
+.reveal .join.hidden {
+  display: none;
+}
+
+.reveal ellipse.cluster {
+  fill:         none;
+  stroke:       steelblue;
+  stroke-width: 4;
+}

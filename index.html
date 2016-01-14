@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
 
-    <title>TITLE</title>
+    <title>Akka Cluster on CoreOS</title>
 
-    <meta name="description" content="TITLE">
-    <meta name="author" content="AUTHOR">
+    <meta name="description" content="Akka Cluster on CoreOS">
+    <meta name="author" content="Heiko Seeberger">
 
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -48,30 +48,314 @@
 <!-- ########################################################################################### -->
 
 <section data-markdown data-background="images/codecentric-title-background-16x9.png"><script type="text/template">
-## TITLE
+## Akka Cluster on CoreOS
 
-AUTHOR, codecentric
+Heiko Seeberger, codecentric
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown data-background="images/codecentric-title-background-16x9.png"><script type="text/template">
+or
+
+## Akka Cluster in a<br>dynamic containerized environment
 </script></section>
 
 <!-- ########################################################################################### -->
 
 <section data-markdown><script type="text/template">
-### TODO
+### Why Akka Cluster?
 
-- TODO
-- TODO
+![Reactive traits](images/reactive.svg "Reactive traits") <!-- .element class="max" -->
+
+Note:
+- *Elastic* and *resilient* demand distribution
+- Akka Cluster is for distribution
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Akka loves Cluster
+
+- akka-cluster
+- akka-cluster-tools
+- akka-cluster-sharding
+- akka-distributed-data
+- ...
+
+Note:
+- akka-cluster is a simple yet powerful low level foundation
+- Many higher level modules, e.g. for
+  - Cluster Singleton
+  - Cluster Client
+  - Distributed Pub Sub
+  - Cluster Sharding
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Why CoreOS?
+
+<blockquote>A **container**-focused OS that's designed for painless management in large **clusters**.</blockquote>
+<small>[coreos.com/os/docs/latest](https://coreos.com/os/docs/latest)</small>
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### What's in CoreOS?
+
+- **Docker** or **rkt** for containers
+- **etcd** for consensus and discovery
+- **fleet** for cluster management
+- Automatic updates
+- ...
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### What is an Akka Cluster?
+
+<blockquote>Akka Cluster provides a fault-tolerant decentralized peer-to-peer based cluster **membership service** ...</blockquote>
+<small>[doc.akka.io/docs/akka/current/common/cluster.html](http://doc.akka.io/docs/akka/current/common/cluster.html)</small>
+
+Note:
+- Talking about akka-cluster
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Membership Service
+
+``` scala
+Cluster(context.system).subscribe(
+  self,
+  InitialStateAsEvents,
+  classOf[MemberEvent]
+)
+
+override def receive = {
+  case MemberUp(m)         => log.info("Member up: {}", m.address)
+  case MemberRemoved(m, _) => log.info("Member removed: {}", m.address)
+}
+```
+
+Note:
+- Other `MemberEvent`s, e.g. `MemberJoined`, `MemberExited`
+- `ReachabilityEvent`s, e.g. `UnreachableMember`
+- You can build anything with the membership service, e.g.
+  - cluster-aware routers
+  - all higher-level cluster modules
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### How can we construct a Cluster?
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown data-state="cluster-01"><script type="text/template">
+### Some Actor Systems – not yet a Cluster
+<svg id="cluster-01">
+  <circle cx="480" cy="160" r="32" class="node hidden"/>
+  <circle cx="240" cy="240" r="32" class="node hidden"/>
+  <circle cx="720" cy="240" r="32" class="node hidden"/>
+</svg>
+
+Note:
+- Akka Remote is not Akka cluster
+- To form a cluster, nodes must join
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown data-state="cluster-02"><script type="text/template">
+### Joining an existing Cluster
+<svg id="cluster-02">
+  <line x1="480" y1="160" x2="240" y2="240" class="fragment join" id="cluster-02-join"/>
+  <line x1="0" y1="0" x2="0" y2="0" class="fragment" id="cluster-02-joined"/>
+  <circle cx="480" cy="160" r="32" class="node member"/>
+  <circle cx="240" cy="240" r="32" class="node" id="cluster-02-joining-node"/>
+  <circle cx="720" cy="240" r="32" class="node member"/>
+  <ellipse cx="600" cy="200" rx="240" ry="80" class="cluster" id="cluster-02-cluster" transform="rotate(18 600 200)"/>
+</svg>
+
+Note:
+- A node can use any member to join
+- Either once or via seed-node process
+- At least one member must be known
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### How can we bootstrap a Cluster?
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### The first Node must join itself
+<svg id="cluster-03">
+  <circle cx="240" cy="192" r="40" class="fragment join self" id="cluster-03-join"/>
+  <circle cx="480" cy="160" r="32" class="node"/>
+  <circle cx="240" cy="240" r="32" class="node" id="cluster-03-joining-node"/>
+  <circle cx="720" cy="240" r="32" class="node"/>
+  <ellipse cx="240" cy="240" rx="180" ry="60" class="fragment cluster" id="cluster-03-joined"/>
+</svg>
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### There can only be one
+![There can only be one](images/there-can-only-be-one.jpg "There can only be one") <!-- .element class="max" -->
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### We must avoid Races
+<svg id="cluster-04">
+  <g id="cluster-04-join" class="fragment">
+    <circle cx="240" cy="192" r="40" class="join self cluster-04-join"/>
+    <circle cx="720" cy="192" r="40" class="join self cluster-04-join"/>
+  </g>
+  <circle cx="480" cy="160" r="32" class="node"/>
+  <circle cx="240" cy="240" r="32" class="node cluster-04-joining-node"/>
+  <circle cx="720" cy="240" r="32" class="node cluster-04-joining-node"/>
+  <g id="cluster-04-joined" class="fragment">
+    <ellipse cx="240" cy="240" rx="180" ry="60" class="cluster" />
+    <ellipse cx="720" cy="240" rx="180" ry="60" class="cluster" />
+  </g>
+</svg>
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Cluster Bootstrapping requires Coordination
+![Coordination](images/guard.jpg "Coordination") <!-- .element class="max" -->
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Bootstrapping in a static Environment
+
+- **You** start the **first node** and have it join itself
+- **You** start further ones and have them join existing ones
+- This is simplified by configuring **known seed nodes**
+
+```
+akka.cluster.seed-nodes = [
+  "akka.tcp://demo-system@172.17.8.101:2552",
+  "akka.tcp://demo-system@172.17.8.102:2552"
+]
+```
 </script></section>
 
 <!-- ########################################################################################### -->
 
 <section data-markdown data-background="images/codecentric-green-background-16x9.png"><script type="text/template">
-### TODO
+## Demo
+### Bootstrapping in a static Environment
+
+Note:
+- `fleetctl start demo-seed-0`
+- `fleetctl start demo-seed-@1`
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### How can we bootstrap<br>in a dynamic Environment?
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Use etcd for Coordination
+
+<blockquote>etcd is a distributed, **consistent** key-value store for **shared configuration** and service discovery ...</blockquote>
+<small>[github.com/coreos/etcd](https://github.com/coreos/etcd)</small>
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown data-background="images/codecentric-green-background-16x9.png"><script type="text/template">
+## Demo
+### etcd overview
+
+Note:
+- See `etcd-demo.txt`
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Bootstrapping and Joining with etcd
+
+- Seed nodes are looked up in etcd
+- After joining a member node adds itself
+- To ensure the Highlander Principle, a lock is acquired
+
+Note:
+- Lock is implemented as CAS PUT using `prevExist=false`
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown><script type="text/template">
+### Cluster Construction with ConstructR
+
+```
+    ┌───────────────────┐              ┌───────────────────┐
+    │   GettingNodes    │◀─────────────│BeforeGettingNodes │
+    └───────────────────┘    delayed   └───────────────────┘
+              │     │                            ▲
+    non-empty │     └──────────────────────┐     │ failure
+              ▼               empty        ▼     │
+    ┌───────────────────┐              ┌───────────────────┐
+    │      Joining      │◀─────────────│      Locking      │
+    └───────────────────┘    success   └───────────────────┘
+              │
+member-joined │
+              ▼
+    ┌───────────────────┐
+    │    AddingSelf     │
+    └───────────────────┘
+              │     ┌────────────────────────────┐
+              │     │                            │
+              ▼     ▼                            │
+    ┌───────────────────┐              ┌───────────────────┐
+    │ RefreshScheduled  │─────────────▶│    Refreshing     │
+    └───────────────────┘              └───────────────────┘
+```
+</script></section>
+
+<!-- ########################################################################################### -->
+
+<section data-markdown data-background="images/codecentric-green-background-16x9.png"><script type="text/template">
+## Demo
+### ConstructR in Action
 </script></section>
 
 <!-- ########################################################################################### -->
 
 <section data-markdown><script type="text/template">
 ## Thank you!
+
+- Code on GitHub:
+  - [github.com/hseeberger/constructr](https://github.com/hseeberger/constructr)
+  - [github.com/hseeberger/demo-akka-cluster-coreos](https://github.com/hseeberger/demo-akka-cluster-coreos)
+- Follow me on Twitter: [@hseeberger](https://twitter.com/hseeberger)
 
 &nbsp;
 
@@ -88,32 +372,82 @@ AUTHOR, codecentric
 
     </div>
 
+    <script src="lib/js/d3.min.js"></script>
     <script src="lib/js/head.min.js"></script>
     <script src="js/reveal.js"></script>
 
     <script>
 
-      // Full list of configuration options available at:
-      // https://github.com/hakimel/reveal.js#configuration
-      Reveal.initialize({
-        controls: true,
-        progress: true,
-        history: true,
-        center: true,
+Reveal.initialize({
+  controls: true,
+  progress: true,
+  history: true,
+  center: true,
 
-        transition: 'slide', // none/fade/slide/convex/concave/zoom
+  transition: 'slide', // none/fade/slide/convex/concave/zoom
 
-        // Optional reveal.js plugins
-        dependencies: [
-          { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
-          { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-          { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-          { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
-          { src: 'plugin/zoom-js/zoom.js', async: true },
-          { src: 'plugin/notes/notes.js', async: true }
-        ]
-      });
+  // Optional reveal.js plugins
+  dependencies: [
+    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+    { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+    { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+    { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+    { src: 'plugin/zoom-js/zoom.js', async: true },
+    { src: 'plugin/notes/notes.js', async: true },
+    { src: 'socket.io/socket.io.js', async: true },
+    { src: 'plugin/notes-server/client.js', async: true }
+  ]
+});
 
+Reveal.addEventListener('cluster-01', function() {
+  d3.select('#cluster-01')
+    .selectAll('.node')
+    .data([1, 2, 3])
+    .transition()
+    .delay(function(d) { return 666 * d; })
+    .style('visibility', 'visible');
+}, false);
+
+Reveal.addEventListener('fragmentshown', function(event) {
+  if (event.fragment.id == 'cluster-02-joined') {
+    d3.select('#cluster-02-join').classed('hidden', true);
+    d3.select('#cluster-02-joining-node').classed('member', true);
+    d3.select('#cluster-02-cluster').attr('transform', 'rotate(0 600 200)').attr('cx', '480').attr('cy', '220').attr('rx', '360').attr('ry', '120');
+  }
+}, false);
+Reveal.addEventListener('fragmenthidden', function(event) {
+  if (event.fragment.id == 'cluster-02-joined') {
+    d3.select('#cluster-02-join').classed('hidden', false);
+    d3.select('#cluster-02-joining-node').classed('member', false);
+    d3.select('#cluster-02-cluster').attr('transform', 'rotate(18 600 200)').attr('cx', '600').attr('cy', '200').attr('rx', '240').attr('ry', '80');
+  }
+}, false);
+
+Reveal.addEventListener('fragmentshown', function(event) {
+  if (event.fragment.id == 'cluster-03-joined') {
+    d3.select('#cluster-03-join').classed('hidden', true);
+    d3.select('#cluster-03-joining-node').classed('member', true);
+  }
+}, false);
+Reveal.addEventListener('fragmenthidden', function(event) {
+  if (event.fragment.id == 'cluster-03-joined') {
+    d3.select('#cluster-03-join').classed('hidden', false);
+    d3.select('#cluster-03-joining-node').classed('member', false);
+  }
+}, false);
+
+Reveal.addEventListener('fragmentshown', function(event) {
+  if (event.fragment.id == 'cluster-04-joined') {
+    d3.selectAll('.cluster-04-join').classed('hidden', true);
+    d3.selectAll('.cluster-04-joining-node').classed('member', true);
+  }
+}, false);
+Reveal.addEventListener('fragmenthidden', function(event) {
+  if (event.fragment.id == 'cluster-04-joined') {
+    d3.selectAll('.cluster-04-join').classed('hidden', false);
+    d3.selectAll('.cluster-04-joining-node').classed('member', false);
+  }
+}, false);
     </script>
 
   </body>
